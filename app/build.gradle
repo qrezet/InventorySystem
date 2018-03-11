@@ -5,28 +5,178 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
     defaultConfig {
         applicationId "com.qrezet.is.inventorysystem"
         minSdkVersion 16
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
     }
+
+    signingConfigs {
+        configUat {
+            keyAlias 'devuatkey'
+            keyPassword 'HfjuTEr@djfiel989AlPh0gh1'
+            storeFile file('C:/Users/Archie/Desktop/dev uat key/devuat-keystore.jks')
+            storePassword 't3R@34349@7P0g123F43'
+            v2SigningEnabled true
+        }
+
+        configRCBCRelease {
+            keyAlias 'rcbcMobileBanking'
+            keyPassword 'Gha1977aBNla1LaB671kklas'
+            storeFile file('C:/Users/Archie/Desktop/RCBC KEY/Key/rcbc-release-key.keystore')
+            storePassword '789Fvaa1HKLbAko115x50sd'
+            v2SigningEnabled true
+        }
+
+        configLBPCRelease {
+            keyAlias 'lbpMobileBanking'
+            keyPassword '76AahW7Ph0gh13eHwLaB6tF2'
+            storeFile file('C:/Users/Archie/Desktop/LBP KEY/lbp-release-key.keystore')
+            storePassword 'Br3k3n1K9BaAL12z77RE17D'
+            v2SigningEnabled true
+        }
+    }
+
+    flavorDimensions "client", "server"
+    productFlavors {
+        smart {
+            dimension "client"
+            applicationId = "com.smart.pmr"
+            versionName "1.0"
+        }
+
+        dev {
+            dimension "server"
+            applicationIdSuffix ".dev"
+        }
+
+        uat {
+            dimension "server"
+            applicationIdSuffix ".uat"
+        }
+
+        prod {
+            dimension "server"
+        }
+    }
+
     buildTypes {
+        debug {
+            debuggable true
+        }
+
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    variantFilter { variant ->
+        def names = variant.flavors*.name
+        def bt = variant.buildType*.name
+        if (names.contains("dev") && bt.contains("release") ||
+                names.contains("uat") && bt.contains("debug") ||
+                names.contains("prod") && bt.contains("debug")) {
+            setIgnore(true)
+        }
+    }
+
+    applicationVariants.all { variant ->
+        if (variant.name == 'smartProdRelease') {
+            def flavor = variant.mergedFlavor
+            flavor.signingConfig = signingConfigs.configRCBCRelease
+        } else if (variant.name == 'smartUatUatRelease') {
+            def flavor = variant.mergedFlavor
+            flavor.signingConfig = signingConfigs.configUat
+        }
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
         }
     }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation"org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:0.5'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:2.2.2'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation 'androidx.core:core-ktx:0.1'
+
+    /* Android Support Libraries */
+    implementation "com.android.support:appcompat-v7:$supportLibraryVersion"
+    implementation "com.android.support:recyclerview-v7:$supportLibraryVersion"
+    implementation "com.android.support:support-v4:$supportLibraryVersion"
+    implementation "com.android.support:cardview-v7:$supportLibraryVersion"
+    implementation "com.android.support:design:$supportLibraryVersion"
+    implementation "com.android.support:percent:$supportLibraryVersion"
+    implementation "com.android.support:support-vector-drawable:$supportLibraryVersion"
+
+    /* Google Services Libraries */
+    implementation "com.google.android.gms:play-services-maps:$googleServicesVersion"
+    implementation "com.google.android.gms:play-services-location:$googleServicesVersion"
+
+    /* Physics Base Animations */
+    implementation "com.android.support:support-dynamic-animation:$supportLibraryVersion"
+
+    /* Android Constraints Layout */
+    implementation "com.android.support.constraint:constraint-layout:$constraintsLayoutVersion"
+
+    // ViewModel and LiveData
+    implementation "android.arch.lifecycle:extensions:$androidArchitectureComponentsVersion"
+    annotationProcessor "android.arch.lifecycle:common-java8:$androidArchitectureComponentsVersion"
+
+    // Test helpers for LiveData
+    testImplementation "android.arch.core:core-testing:$androidArchitectureComponentsVersion"
+
+    // ReactiveStreams support for LiveData
+    implementation "android.arch.lifecycle:reactivestreams:$androidArchitectureComponentsVersion"
+
+    // RX Java
+    implementation "io.reactivex.rxjava2:rxjava:$rxJavaVersion"
+
+    /* RX Android */
+    implementation "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion"
+
+    /* Dagger2 for Dependency Injection */
+    implementation "com.google.dagger:dagger:$daggerVersion"
+    annotationProcessor "com.google.dagger:dagger-compiler:$daggerVersion"
+
+    /* Retrofit */
+    //implementation 'com.squareup.okhttp3:okhttp:3.8.0'  //no need to
+    devImplementation "com.squareup.okhttp3:logging-interceptor:$loggingInterceptorVersion"
+    uatImplementation "com.squareup.okhttp3:logging-interceptor:$loggingInterceptorVersion"
+    implementation "com.squareup.retrofit2:retrofit:$retrofitVersion"
+
+    /* JSON Parsing */
+    implementation "com.google.code.gson:gson:$gsonVersion"
+    implementation "com.squareup.retrofit2:converter-gson:$gsonConverterVersion"
+
+    /* Convert Retrofit2 return as Observable */
+    /* Allows Retrofit to Work with RxJava */
+    implementation "com.squareup.retrofit2:adapter-rxjava2:$retrofitVersion"
+
+    /* For Testing */
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation "org.mockito:mockito-core:$mokitoVersion"
+    testImplementation "org.robolectric:robolectric:$roboElectricVersion"
+    androidTestImplementation "com.android.support.test:runner:$testRunnerVersion"
+    androidTestImplementation "com.android.support.test:rules:$testRunnerVersion"
+    androidTestImplementation "com.android.support.test.espresso:espresso-core:$expressoVersion"
+    androidTestImplementation "com.android.support.test.espresso:espresso-intents:$expressoVersion"
+    androidTestImplementation "com.android.support.test.espresso:espresso-contrib:$expressoVersion"
+    androidTestImplementation "com.android.support.test.espresso:espresso-idling-resource:$expressoVersion"
+
+    androidTestImplementation 'com.squareup.rx.idler:rx2-idler:0.9.0'
 }
